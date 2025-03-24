@@ -1,0 +1,9 @@
+rootProject.name = 'makestar'
+
+include 'services:api-gateway'
+include 'services:auth-service'
+include 'services:user-service'
+include 'services:chat-service'
+include 'services:history-service'
+include 'shared:common-dto'
+include 'shared:common-utils'

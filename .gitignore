@@ -1,0 +1,147 @@
+# MakeStar 채팅 애플리케이션 .gitignore
+
+### Java / Spring Boot ###
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+
+# 빌드 폴더
+**/build/
+**/bin/
+**/out/
+**/target/
+
+# 스프링 부트 관련
+.springBeans
+.sts4-cache/
+.spring.scannerwork/
+
+# 로그 파일
+*.log
+logs/
+/log/
+
+### Gradle ###
+.gradle/
+.gradle
+**/gradle/wrapper/gradle-wrapper.jar
+.gradletasknamecache
+gradle-app.setting
+
+# Gradle 래퍼는 버전 관리에 포함 (예외 처리)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Gradle wrapper binary files
+wrapper/dists/**/*.zip
+
+### 프론트엔드 (Vue.js / Node.js) ###
+# 의존성
+node_modules/
+/dist/
+/.vite/
+/.nuxt/
+/.next/
+/.pnpm-store/
+/.npm/
+
+# 로그
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 환경 변수 및 로컬 설정
+.env
+.env.local
+.env.*.local
+
+# 캐시
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.cache/
+.yarn/cache
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+### IDE 및 에디터 ###
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+*.iwsxm
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+.apt_generated/
+.factorypath
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### 운영체제 파일 ###
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+### 프로젝트 특화 ###
+# 데이터베이스 파일
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+
+# 테스트 결과
+/test-results/
+/htmlcov/
+.coverage
+.coverage.*
+/coverage/
+
+# 임시 파일
+/temp/
+/tmp/
+
+# 애플리케이션 설정 (민감한 정보가 포함된 경우)
+# application-prod.yml
+# application-dev.yml
+
+# 기타 커스텀 설정
+/.cursor/
+.DS_Store?
+.directory
+*~ 
