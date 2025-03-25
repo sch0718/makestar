@@ -12,6 +12,19 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
+/**
+ * 인증 관련 REST API 컨트롤러
+ * 
+ * <p>사용자 인증과 관련된 엔드포인트들을 제공합니다.</p>
+ * 
+ * <p>제공 기능:</p>
+ * <ul>
+ *   <li>로그인</li>
+ *   <li>회원가입</li>
+ *   <li>토큰 갱신</li>
+ *   <li>토큰 검증</li>
+ * </ul>
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -21,7 +34,10 @@ public class AuthController {
     private final AuthService authService;
 
     /**
-     * 로그인 API
+     * 사용자 로그인을 처리하는 엔드포인트
+     * 
+     * @param loginRequest 로그인 요청 정보 (사용자명, 비밀번호)
+     * @return 로그인 응답 (액세스 토큰, 리프레시 토큰, 사용자 정보)
      */
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequest) {
@@ -31,7 +47,10 @@ public class AuthController {
     }
 
     /**
-     * 회원가입 API
+     * 새로운 사용자 등록을 처리하는 엔드포인트
+     * 
+     * @param userDto 회원가입 요청 정보 (사용자명, 이메일, 비밀번호 등)
+     * @return 생성된 사용자 정보
      */
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(@Valid @RequestBody UserDto userDto) {
@@ -41,7 +60,10 @@ public class AuthController {
     }
 
     /**
-     * 토큰 갱신 API
+     * 리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급하는 엔드포인트
+     * 
+     * @param refreshToken 리프레시 토큰
+     * @return 새로운 액세스 토큰과 사용자 정보
      */
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponseDto> refreshToken(@RequestParam String refreshToken) {
@@ -51,7 +73,10 @@ public class AuthController {
     }
 
     /**
-     * 토큰 검증 API
+     * 토큰의 유효성을 검증하는 엔드포인트
+     * 
+     * @param token 검증할 토큰
+     * @return 검증 결과 (200 OK: 유효, 401 Unauthorized: 유효하지 않음)
      */
     @GetMapping("/validate")
     public ResponseEntity<Void> validateToken(@RequestParam String token) {

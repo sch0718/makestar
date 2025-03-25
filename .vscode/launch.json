@@ -49,6 +49,16 @@
             "projectName": "user-service",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-DiscoveryServiceApplication<discovery-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.makestar.discovery.DiscoveryServiceApplication",
+            "projectName": "discovery-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

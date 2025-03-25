@@ -46,6 +46,12 @@ graph TD
     ChatService <-.-> MessageBroker{메시지 브로커}
     MessageBroker <-.-> HistoryService
     
+    DiscoveryService[Discovery Service] <-.-> Gateway
+    DiscoveryService <-.-> AuthService
+    DiscoveryService <-.-> UserService
+    DiscoveryService <-.-> ChatService
+    DiscoveryService <-.-> HistoryService
+    
     subgraph "Frontend"
         Client
     end
@@ -57,6 +63,7 @@ graph TD
         ChatService
         HistoryService
         MessageBroker
+        DiscoveryService
     end
     
     subgraph "Data Layer"
@@ -91,6 +98,15 @@ graph TD
   - Git (버전 관리)
 
 ## 서비스 설명
+
+### Discovery Service
+
+Discovery Service는 서비스 등록 및 검색을 담당합니다:
+
+- Netflix Eureka 서버를 기반으로 구현
+- 모든 마이크로서비스의 등록 처리
+- 서비스 위치 정보 제공
+- 상태 모니터링 및 장애 감지
 
 ### API Gateway
 
@@ -212,6 +228,7 @@ cd makestar
 ./gradlew clean build
 
 # 서비스 순차적 실행 (별도의 터미널에서)
+java -jar services/discovery-service/build/libs/discovery-service-0.0.1-SNAPSHOT.jar  # 먼저 실행
 java -jar services/api-gateway/build/libs/api-gateway-0.0.1-SNAPSHOT.jar
 java -jar services/auth-service/build/libs/auth-service-0.0.1-SNAPSHOT.jar
 java -jar services/user-service/build/libs/user-service-0.0.1-SNAPSHOT.jar
@@ -246,6 +263,7 @@ npm run build
 
 기본적으로 서비스는 다음 포트에서 실행됩니다:
 
+- Discovery Service: http://localhost:8761
 - API Gateway: http://localhost:8080
 - Auth Service: http://localhost:8081
 - User Service: http://localhost:8082
