@@ -144,4 +144,14 @@ $RECYCLE.BIN/
 /.cursor/
 .DS_Store?
 .directory
-*~ 
+*~
+
+# Local Configuration
+application-local.yml
+application-local.properties
+.env.local
+.env
+
+# Local configuration files
+*-local.yml
+*-local.properties 

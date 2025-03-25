@@ -29,7 +29,7 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     
     // DB
-    runtimeOnly 'com.h2database:h2:1.4.200'
+    runtimeOnly 'org.postgresql:postgresql'
     
     // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.30'

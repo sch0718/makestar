@@ -6,10 +6,10 @@ spring:
   application:
     name: auth-service
   datasource:
-    url: jdbc:h2:mem:authdb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: ${SUPABASE_AUTH_DB_URL}
+    username: ${SUPABASE_AUTH_DB_USER}
+    password: ${SUPABASE_AUTH_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,11 +17,7 @@ spring:
       hibernate:
         format_sql: true
         show_sql: true
-    database-platform: org.hibernate.dialect.H2Dialect
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
 eureka:
   client:
     serviceUrl:

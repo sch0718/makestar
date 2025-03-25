@@ -7,7 +7,7 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.makestar.apigateway.ApiGatewayApplication",
             "projectName": "api-gateway",
-            "args": "",
+            "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
         },
         {
@@ -17,7 +17,7 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.makestar.authservice.AuthServiceApplication",
             "projectName": "auth-service",
-            "args": "",
+            "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
         },
         {
@@ -27,7 +27,7 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.makestar.chatservice.ChatServiceApplication",
             "projectName": "chat-service",
-            "args": "",
+            "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
         },
         {
@@ -37,7 +37,7 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.makestar.historyservice.HistoryServiceApplication",
             "projectName": "history-service",
-            "args": "",
+            "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
         },
         {
@@ -47,7 +47,7 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.makestar.userservice.UserServiceApplication",
             "projectName": "user-service",
-            "args": "",
+            "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
         },
         {
@@ -57,7 +57,7 @@
             "cwd": "${workspaceFolder}",
             "mainClass": "com.makestar.discovery.DiscoveryServiceApplication",
             "projectName": "discovery-service",
-            "args": "",
+            "args": "--spring.profiles.active=local",
             "envFile": "${workspaceFolder}/.env"
         }
     ]
