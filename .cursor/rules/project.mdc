@@ -34,7 +34,7 @@ MakeStar는 다음과 같은 구성 요소를 가진 마이크로서비스 아�
 ### 기술 스택
 
 - **Frontend**: Vue 3, TypeScript, Vite, Pinia
-- **Backend**: Java 11+, Spring Boot, Spring Cloud
+- **Backend**: Java 11+, Spring Boot 2.7.18, Spring Cloud 2021.0.7
 - **Database**: PostgreSQL, MongoDB, Redis
 - **Messaging**: RabbitMQ
 - **Build Tools**: Gradle (Backend), npm (Frontend)
@@ -49,6 +49,7 @@ MakeStar는 다음과 같은 구성 요소를 가진 마이크로서비스 아�
 makestar/
 ├── .github/                        # GitHub 워크플로우 및 CI/CD 구성
 ├── services/                       # 백엔드 마이크로서비스
+│   ├── discovery-service/          # Discovery 서비스
 │   ├── api-gateway/                # API Gateway 서비스
 │   ├── auth-service/               # 인증 서비스
 │   ├── user-service/               # 사용자 서비스
@@ -58,6 +59,7 @@ makestar/
 │   └── web-client/                 # Vue 웹 클라이언트
 ├── shared/                         # 공유 라이브러리 및 모듈
 │   ├── common-dto/                 # 공통 DTO 클래스
+│   ├── common-model/               # 공통 JPA 클래스
 │   ├── common-utils/               # 공통 유틸리티 함수
 │   └── common-security/            # 공통 보안 구성
 ├── docker/                         # Docker 관련 설정
@@ -74,24 +76,25 @@ makestar/
 #### 백엔드 서비스 (Spring Boot)
 
 ```
-services/{service-name}/
+services/{service-name}-service/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/makestar/{service-name}/
-│   │   │   ├── config/              # 설정 클래스
-│   │   │   ├── controller/          # API 컨트롤러
-│   │   │   ├── service/             # 비즈니스 로직
-│   │   │   ├── repository/          # 데이터 액세스 계층
-│   │   │   ├── domain/              # 도메인 모델
-│   │   │   ├── dto/                 # 데이터 전송 객체
-│   │   │   ├── exception/           # 예외 처리
+│   │   │   ├── config/                         # 설정 클래스
+│   │   │   ├── controller/                     # API 컨트롤러
+│   │   │   ├── service/                        # 비즈니스 로직
+│   │   │   ├── repository/                     # 데이터 액세스 계층
+│   │   │   ├── model/                          # JPA 모델
+│   │   │   ├── dto/                            # 데이터 전송 객체
+│   │   │   ├── exception/                      # 예외 처리
 │   │   │   └── {service-name}Application.java  # 애플리케이션 진입점
 │   │   └── resources/
-│   │       ├── application.yml      # 애플리케이션 설정
-│   │       └── bootstrap.yml        # Spring Cloud Config 설정 (필요시)
-│   └── test/                        # 테스트 코드
-├── build.gradle                     # Gradle 빌드 파일
-└── README.md                        # 서비스 문서
+│   │       ├── application.yml                 # 애플리케이션 설정
+│   │       ├── application-{profile}.yml       # profile별 애플리케이션 설정
+│   │       └── bootstrap.yml                   # Spring Cloud Config 설정 (필요시)
+│   └── test/                                   # 테스트 코드
+├── build.gradle                                # Gradle 빌드 파일
+└── README.md                                   # 서비스 문서
 ```
 
 #### 프론트엔드 (Vue.js)
@@ -124,7 +127,7 @@ frontend/web-client/
 shared/{library-name}/
 ├── src/
 │   ├── main/
-│   │   ├── java/com/makestar/shared/{library-name}/
+│   │   ├── java/com/makestar/common/{library-name}/
 │   │   └── resources/
 │   └── test/
 ├── build.gradle
