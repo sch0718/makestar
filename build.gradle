@@ -2,6 +2,21 @@ buildscript {
     repositories {
         mavenCentral()
     }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:2.7.18"
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version '2.7.18' apply false
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE' apply false
+}
+
+ext {
+    springBootVersion = '2.7.18'
+    springCloudVersion = '2021.0.8'
+    springDependencyManagementVersion = '1.0.15.RELEASE'
+    javaVersion = 17
 }
 
 allprojects {
@@ -14,37 +29,75 @@ allprojects {
 }
 
 subprojects {
-    apply plugin: 'java'
+    apply plugin: 'java-library'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
     
-    sourceCompatibility = 17
-    targetCompatibility = 17
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(rootProject.ext.javaVersion)
+        }
+    }
     
-    tasks.withType(JavaCompile) {
+    tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
+        options.compilerArgs += ['-Xlint:deprecation']
     }
     
-    // 테스트 컴파일 및 실행 비활성화
-    tasks.withType(Test) {
-        enabled = false
+    configurations {
+        all {
+            resolutionStrategy {
+                eachDependency { details ->
+                    if (details.requested.group == 'org.springframework.boot') {
+                        details.useVersion springBootVersion
+                    }
+                }
+            }
+        }
     }
     
-    tasks.withType(JavaCompile) {
-        if (it.name.contains('Test')) {
-            enabled = false
+    // 실행 가능한 jar가 필요하지 않은 프로젝트는 bootJar 비활성화
+    if (!project.name.endsWith('service') && !project.name.equals('api-gateway')) {
+        bootJar.enabled = false
+        jar.enabled = true
+    }
+    
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
         }
     }
     
     dependencies {
-        // 공통 의존성
-        implementation 'org.projectlombok:lombok:1.18.30'
-        annotationProcessor 'org.projectlombok:lombok:1.18.30'
+        // Spring Boot
+        implementation "org.springframework.boot:spring-boot-starter"
+        implementation "org.springframework.boot:spring-boot-starter-validation"
+        implementation "org.springframework.boot:spring-boot-starter-actuator"
         
-        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+        // Spring Cloud
+        implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client"
+        implementation "org.springframework.cloud:spring-cloud-starter-config"
+        implementation "org.springframework.cloud:spring-cloud-starter-openfeign"
+        implementation "org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j"
+        
+        // Lombok
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        
+        // Test
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testImplementation 'org.junit.jupiter:junit-jupiter-api'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     }
     
-    test {
+    tasks.named('test') {
         useJUnitPlatform()
         enabled = false
     }
+}
+
+// 공유 모듈은 Spring Boot 플러그인 제외
+configure(subprojects.findAll { it.path.startsWith(':shared:') }) {
+    bootJar.enabled = false
+    jar.enabled = true
 }

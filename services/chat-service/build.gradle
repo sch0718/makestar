@@ -1,19 +1,4 @@
-plugins {
-    id 'org.springframework.boot' version '2.7.0'
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
-    id 'java'
-}
-
-group = 'com.makestar'
-version = '0.0.1-SNAPSHOT'
 description = 'Chat Service for MakeStar Chat Application'
-
-sourceCompatibility = 17
-targetCompatibility = 17
-
-ext {
-    springCloudVersion = "2021.0.3"
-}
 
 repositories {
     mavenCentral()
@@ -38,26 +23,13 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
     
     // 공통 모듈 의존성
-    implementation project(':shared:common-dto')
-    implementation project(':shared:common-utils')
+    implementation project(':shared:commons')
     
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
-}
-
-// 테스트 컴파일 비활성화
-tasks.named('compileTestJava').configure {
-    enabled = false
-}
-
-test {
+tasks.named('test') {
     useJUnitPlatform()
-    // 테스트 실행 건너뛰기
     enabled = false
 } 

@@ -3,6 +3,10 @@ server:
 spring:
   application:
     name: user-service
+  cloud:
+    config:
+      import-check:
+        enabled: false
   datasource:
     url: ${SUPABASE_USER_DB_URL}
     username: ${SUPABASE_USER_DB_USER}

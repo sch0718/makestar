@@ -3,6 +3,13 @@ server:
 spring:
   application:
     name: api-gateway
+  main:
+    web-application-type: reactive
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
   cloud:
     gateway:
       default-filters:
@@ -45,6 +52,9 @@ spring:
             - Path=/chat-ws/**
           filters:
             - StripPrefix=0
+    config:
+      import-check:
+        enabled: false
 jwt:
   secret: makeStarChatApplicationJwtSecretKey2023ForTestPurpose
   access-token-expiration: 3600000 # 1시간

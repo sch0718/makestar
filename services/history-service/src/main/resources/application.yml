@@ -3,6 +3,10 @@ server:
 spring:
   application:
     name: history-service
+  cloud:
+    config:
+      import-check:
+        enabled: false
   datasource:
     url: ${SUPABASE_HISTORY_DB_URL}
     username: ${SUPABASE_HISTORY_DB_USER}

@@ -2,6 +2,9 @@ package com.makestar.apigateway;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 
 /**
  * API 게이트웨이 애플리케이션
@@ -24,7 +27,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *   <li>Spring Cloud Netflix Eureka Client</li>
  * </ul>
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+    DataSourceAutoConfiguration.class,
+    HibernateJpaAutoConfiguration.class,
+    WebMvcAutoConfiguration.class
+})
 public class ApiGatewayApplication {
 
     /**

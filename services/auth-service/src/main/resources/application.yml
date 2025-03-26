@@ -5,6 +5,10 @@ server:
 spring:
   application:
     name: auth-service
+  cloud:
+    config:
+      import-check:
+        enabled: false
   datasource:
     url: ${SUPABASE_AUTH_DB_URL}
     username: ${SUPABASE_AUTH_DB_USER}
