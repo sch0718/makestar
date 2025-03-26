@@ -10,9 +10,9 @@
 
 이 프로젝트는 채팅을 위한 서버와 클라이언트 두 가지 주요 기능을 포함하고 있습니다.
 
-- [문제 보기](./TEST.md)
+- [문제 보기](./docs/TEST.md)
 
-- [삽질 보기](./TROUBLE_SHOOTING.md)
+- [삽질 보기](./docs/TROUBLE_SHOOTING.md)
 
 ## 시스템 개요
 
@@ -284,11 +284,11 @@ npm run build
 
 ## 데이터베이스
 
-[데이터베이스 아키텍처 보기](DB_ARCHITECTURE.md)
+[데이터베이스 아키텍처 보기](./docs/DB_ARCHITECTURE.md)
 
 ## 구현하지 못한 것
 
-[최초 설계](TROUBLE_SHOOTING.md#아키텍처-설계-kubernetes-기반)에는 고려하여 설계 하였으나 시간과 리소스를 고려하여 아키텍처를 변경하면서 아래의 항목들을 제외하게 되었습니다.
+[최초 설계](./docs/TROUBLE_SHOOTING.md#아키텍처-설계-kubernetes-기반)에는 고려하여 설계 하였으나 시간과 리소스를 고려하여 아키텍처를 변경하면서 아래의 항목들을 제외하게 되었습니다.
 
 ### 확장성 및 성능
 
