@@ -1,5 +1,7 @@
 server:
   port: 8080
+
+# Spring 설정
 spring:
   application:
     name: api-gateway
@@ -52,13 +54,52 @@ spring:
             - Path=/chat-ws/**
           filters:
             - StripPrefix=0
+        - id: auth-openapi
+          uri: lb://auth-service
+          predicates:
+            - Path=/api-docs/auth/**
+          filters:
+            - RewritePath=/api-docs/auth(?<segment>/?.*), /api-docs$\{segment}
+        - id: user-openapi
+          uri: lb://user-service
+          predicates:
+            - Path=/api-docs/user/**
+          filters:
+            - RewritePath=/api-docs/user(?<segment>/?.*), /api-docs$\{segment}
+        - id: chat-openapi
+          uri: lb://chat-service
+          predicates:
+            - Path=/api-docs/chat/**
+          filters:
+            - RewritePath=/api-docs/chat(?<segment>/?.*), /api-docs$\{segment}
+        - id: history-openapi
+          uri: lb://history-service
+          predicates:
+            - Path=/api-docs/history/**
+          filters:
+            - RewritePath=/api-docs/history(?<segment>/?.*), /api-docs$\{segment}
+        - id: discovery-openapi
+          uri: lb://discovery-service
+          predicates:
+            - Path=/api-docs/discovery/**
+          filters:
+            - RewritePath=/api-docs/discovery(?<segment>/?.*), /api-docs$\{segment}
+        - id: api-gateway-openapi
+          uri: lb://api-gateway
+          predicates:
+            - Path=/api-docs/**
     config:
       import-check:
         enabled: false
+
+# JWT 설정
 jwt:
   secret: makeStarChatApplicationJwtSecretKey2023ForTestPurpose
   access-token-expiration: 3600000 # 1시간
   refresh-token-expiration: 604800000 # 7일
+  # 로컬 테스트용 설정
+
+# 관리 엔드포인트 설정
 management:
   endpoints:
     web:
@@ -67,7 +108,27 @@ management:
   endpoint:
     health:
       show-details: always
+
+# 로깅 설정
 logging:
   level:
     org.springframework.cloud.gateway: INFO
     reactor.netty.http.client: INFO
+
+# SpringDoc OpenAPI 설정
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: auth
+        url: /api-docs/auth
+      - name: user
+        url: /api-docs/user
+      - name: chat
+        url: /api-docs/chat
+      - name: history
+        url: /api-docs/history
+      - name: discovery
+        url: /api-docs/discovery
+  api-docs:
+    enabled: true

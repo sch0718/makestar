@@ -1,6 +1,7 @@
 server:
   port: 8761
 
+# Spring 설정
 spring:
   application:
     name: discovery-service
@@ -9,6 +10,7 @@ spring:
       import-check:
         enabled: false
 
+# Eureka 설정
 eureka:
   client:
     register-with-eureka: false
@@ -17,7 +19,18 @@ eureka:
     enable-self-preservation: false
     wait-time-in-ms-when-sync-empty: 0
 
+# 로깅 설정
 logging:
   level:
     com.netflix.eureka: INFO
-    com.netflix.discovery: INFO 
+    com.netflix.discovery: INFO
+
+# SpringDoc OpenAPI 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  packages-to-scan: com.makestar.discovery
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json 
