@@ -15,10 +15,7 @@ const error = computed(() => authStore.error);
 const submitForm = async () => {
   if (!username.value || !password.value) return;
   
-  const success = await authStore.login({
-    username: username.value,
-    password: password.value
-  });
+  const success = await authStore.login(username.value, password.value);
   
   if (success) {
     // 리디렉션 처리

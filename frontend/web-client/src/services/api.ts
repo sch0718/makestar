@@ -1,27 +1,27 @@
 import axios from 'axios';
 import router from '@/router';
 
-// API 기본 URL 설정
-const API_URL = import.meta.env.VITE_API_URL || '/api';
-
-// axios 인스턴스 생성
+// API 클라이언트 생성
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: '/api', // 프록시 경로 사용
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
   },
-  timeout: 10000 // 10초
+  withCredentials: true, // CORS 요청에 쿠키 포함
 });
 
-// 요청 인터셉터 설정
+// 요청 인터셉터
 api.interceptors.request.use(
   (config) => {
     // 로컬 스토리지에서 토큰 가져오기
     const token = localStorage.getItem('token');
+    
+    // 인증 헤더에 토큰 추가
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {
@@ -29,23 +29,24 @@ api.interceptors.request.use(
   }
 );
 
-// 응답 인터셉터 설정
+// 응답 인터셉터
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // 인증 에러 처리 (401 Unauthorized)
+    console.error('API 오류:', error);
+    
+    // 401 오류 처리 (인증 실패)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      router.push('/login');
+      // 로그인 페이지로 리다이렉트 (register나 login 페이지가 아닌 경우에만)
+      const currentPath = router.currentRoute.value.path;
+      if (currentPath !== '/login' && currentPath !== '/register') {
+        localStorage.removeItem('token');
+        router.push('/login');
+      }
     }
     
-    // 서버 에러 처리 (500 Internal Server Error)
-    if (error.response && error.response.status === 500) {
-      console.error('서버 오류가 발생했습니다.');
-    }
-
     return Promise.reject(error);
   }
 );
