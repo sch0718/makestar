@@ -90,9 +90,11 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             ServerHttpRequest request = exchange.getRequest();
             
             // Skip JWT validation for authentication endpoints
-            if (request.getURI().getPath().contains("/api/auth/login") || 
-                request.getURI().getPath().contains("/api/auth/register") || 
-                request.getURI().getPath().contains("/chat-ws")) {
+            if (request.getURI().getPath().contains("/api/auth/login") ||
+                request.getURI().getPath().contains("/api/auth/register") ||
+                request.getURI().getPath().contains("/chat-ws") ||
+                request.getURI().getPath().contains("/actuator") ||
+                request.getURI().getPath().contains("/api-docs")) {
                 return chain.filter(exchange);
             }
             

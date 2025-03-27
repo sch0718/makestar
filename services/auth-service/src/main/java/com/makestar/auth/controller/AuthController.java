@@ -65,7 +65,7 @@ public class AuthController {
      * @param refreshToken 리프레시 토큰
      * @return 새로운 액세스 토큰과 사용자 정보
      */
-    @PostMapping("/refresh")
+    @PostMapping("/refresh-token")
     public ResponseEntity<LoginResponseDto> refreshToken(@RequestParam String refreshToken) {
         log.info("토큰 갱신 요청");
         LoginResponseDto response = authService.refreshToken(refreshToken);

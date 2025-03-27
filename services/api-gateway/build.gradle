@@ -8,6 +8,17 @@ dependencies {
     // Gateway 전용 의존성
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
     
+    // Service Discovery
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    
+    // Circuit Breaker
+    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
+    implementation 'io.github.resilience4j:resilience4j-spring-boot2'
+    implementation 'io.github.resilience4j:resilience4j-timelimiter'
+    
+    // Redis 레이트 리미터 (옵션 - Redis 사용 시 활성화)
+    // implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    
     // WebFlux 전용 의존성
     implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.7.0'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

@@ -1,55 +1,58 @@
 package com.makestar.apigateway.config;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
+import org.springframework.cloud.circuitbreaker.resilience4j.ReactiveResilience4JCircuitBreakerFactory;
+import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JConfigBuilder;
+import org.springframework.cloud.client.circuitbreaker.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.time.Duration;
 
 /**
- * API Gateway 구성 클래스
+ * API Gateway 라우팅 및 회로 차단기 구성 클래스
  * 
- * <p>Spring Cloud Gateway의 라우팅 규칙, 필터, 보안 설정 등을 정의합니다.</p>
+ * <p>Spring Cloud Gateway의 라우팅 규칙, 필터, 회로 차단기 등을 정의합니다.</p>
  * 
  * <p>주요 기능:</p>
  * <ul>
  *   <li>서비스 라우팅 설정</li>
  *   <li>글로벌 필터 구성</li>
- *   <li>보안 정책 적용</li>
  *   <li>로드밸런싱 설정</li>
  *   <li>서비스 디스커버리 통합</li>
+ *   <li>회로 차단기 구성</li>
  * </ul>
  */
-// @Configuration
+@Configuration
 public class GatewayConfig {
     
     /**
-     * CORS(Cross-Origin Resource Sharing) 설정을 위한 필터 빈을 생성합니다.
+     * Resilience4J 기반 회로 차단기 팩토리 사용자 정의
      * 
-     * <p>주요 설정:</p>
+     * <p>회로 차단기 설정:</p>
      * <ul>
-     *   <li>모든 출처(Origin)에 대한 요청 허용</li> 
-     *   <li>preflight 요청 캐시 시간을 3600초(1시간)로 설정</li>
-     *   <li>GET, POST, PUT, DELETE, OPTIONS 메서드 허용</li>
-     *   <li>Content-Type, Authorization 헤더 허용</li>
+     *   <li>실패율 50% 이상일 때 회로 열림</li>
+     *   <li>슬라이딩 윈도우 크기: 10</li>
+     *   <li>열린 상태 지속 시간: 10초</li>
+     *   <li>타임아웃: 3초</li>
      * </ul>
      *
-     * @return CorsWebFilter CORS 설정이 적용된 웹 필터
+     * @return Customizer 회로 차단기 팩토리 사용자 정의
      */
-    // @Bean
-    public CorsWebFilter corsWebFilter() {
-        CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Collections.singletonList("*"));
-        corsConfig.setMaxAge(3600L);
-        corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        corsConfig.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization"));
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfig);
-        
-        return new CorsWebFilter(source);
+    @Bean
+    public Customizer<ReactiveResilience4JCircuitBreakerFactory> defaultCustomizer() {
+        return factory -> factory.configureDefault(id -> new Resilience4JConfigBuilder(id)
+            .circuitBreakerConfig(CircuitBreakerConfig.custom()
+                .failureRateThreshold(50)
+                .slidingWindowSize(10)
+                .minimumNumberOfCalls(5)
+                .waitDurationInOpenState(Duration.ofSeconds(10))
+                .permittedNumberOfCallsInHalfOpenState(3)
+                .build())
+            .timeLimiterConfig(TimeLimiterConfig.custom()
+                .timeoutDuration(Duration.ofSeconds(3))
+                .build())
+            .build());
     }
 } 

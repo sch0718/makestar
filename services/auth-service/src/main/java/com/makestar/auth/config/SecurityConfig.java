@@ -14,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  * 
  * <p>주요 설정:</p>
  * <ul>
- *   <li>보안 필터 체인 구성</li>
  *   <li>비밀번호 인코더 설정</li>
  *   <li>인증 관리자 설정</li>
  * </ul>

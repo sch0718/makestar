@@ -1,5 +1,8 @@
 server:
   port: 8080
+  # 타임아웃 설정
+  netty:
+    connection-timeout: 5000
 
 # Spring 설정
 spring:
@@ -16,45 +19,77 @@ spring:
     gateway:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+        #- name: RequestRateLimiter
+        #  args:
+        #    redis-rate-limiter.replenishRate: 10
+        #    redis-rate-limiter.burstCapacity: 20
+        #    key-resolver: "#{@ipKeyResolver}"
+        - name: Retry
+          args:
+            retries: 3
+            statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+            methods: GET
+            backoff:
+              firstBackoff: 100ms
+              maxBackoff: 500ms
+              factor: 2
+              basedOnPreviousValue: false
       globalcors:
         cors-configurations:
           '[/**]':
             allowed-origin-patterns: "*"
             allowed-methods: "*"
             allowed-headers: "*"
+            exposed-headers: "Authorization,X-Gateway-Auth"
             allow-credentials: true
-            exposed-headers: "Authorization, X-Total-Count"
+            max-age: 3600
       routes:
         - id: auth-service
-          uri: http://localhost:8081
+          uri: lb://auth-service  # 서비스 디스커버리 사용
           predicates:
             - Path=/api/auth/**
           filters:
-            - StripPrefix=1
+            - RewritePath=/api/auth(?<segment>/?.*), /api/auth$\{segment}
             - AddRequestHeader=X-Gateway-Auth, makestar-internal-gateway
+            - name: CircuitBreaker
+              args:
+                name: authServiceCircuitBreaker
+                fallbackUri: forward:/fallback/auth-service
         - id: user-service
-          uri: http://localhost:8082
+          uri: lb://user-service  # 서비스 디스커버리 사용
           predicates:
             - Path=/api/users/**
           filters:
-            - StripPrefix=1
+            - RewritePath=/api/users(?<segment>/?.*), /api/users$\{segment}
             - AddRequestHeader=X-Gateway-Auth, makestar-internal-gateway
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
         - id: chat-service
-          uri: http://localhost:8083
+          uri: lb://chat-service  # 서비스 디스커버리 사용
           predicates:
             - Path=/api/chat/**
           filters:
-            - StripPrefix=1
+            - RewritePath=/api/chat(?<segment>/?.*), /api/chat$\{segment}
             - AddRequestHeader=X-Gateway-Auth, makestar-internal-gateway
+            - name: CircuitBreaker
+              args:
+                name: chatServiceCircuitBreaker
+                fallbackUri: forward:/fallback/chat-service
         - id: history-service
-          uri: http://localhost:8084
+          uri: lb://history-service  # 서비스 디스커버리 사용
           predicates:
             - Path=/api/history/**
           filters:
-            - StripPrefix=1
+            - RewritePath=/api/history(?<segment>/?.*), /api/history$\{segment}
             - AddRequestHeader=X-Gateway-Auth, makestar-internal-gateway
+            - name: CircuitBreaker
+              args:
+                name: historyServiceCircuitBreaker
+                fallbackUri: forward:/fallback/history-service
         - id: websocket-chat
-          uri: http://localhost:8083
+          uri: lb://chat-service  # 서비스 디스커버리 사용
           predicates:
             - Path=/chat-ws/**
           filters:
@@ -87,32 +122,87 @@ spring:
           filters:
             - RewritePath=/api-docs/history(?<segment>/?.*), /api-docs$\{segment}
             - AddRequestHeader=X-Gateway-Auth, makestar-internal-gateway
+      discovery:
+        locator:
+          enabled: true  # 서비스 디스커버리를 통한 자동 라우팅 활성화
+          lower-case-service-id: true
+      httpclient:
+        connect-timeout: 2000  # 연결 타임아웃(ms)
+        response-timeout: 5s   # 응답 타임아웃
+        pool:
+          max-connections: 1000  # 최대 커넥션 수
+          acquire-timeout: 5000  # 커넥션 획득 타임아웃(ms)
     config:
       import-check:
         enabled: false
+    # 회복성 설정
+    circuitbreaker:
+      resilience4j:
+        enabled: true
+  redis:
+    host: localhost
+    port: 6379
 
 # JWT 설정
 jwt:
   secret: makeStarChatApplicationJwtSecretKey2023ForTestPurpose
   access-token-expiration: 3600000 # 1시간
   refresh-token-expiration: 604800000 # 7일
-  # 로컬 테스트용 설정
 
 # Eureka 설정
 eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
     ip-address: 127.0.0.1
+    instance-id: ${spring.application.name}:${random.uuid}
+    # 30초마다 하트비트 전송
+    lease-renewal-interval-in-seconds: 30
+    # 90초 동안 하트비트가 없으면 인스턴스 종료로 간주
+    lease-expiration-duration-in-seconds: 90
+
+# 회복성 설정
+resilience4j:
+  # 전역 타임아웃 설정
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+  # 회로 차단기 설정
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10000
+        permitted-number-of-calls-in-half-open-state: 5
+        register-health-indicator: true
+    instances:
+      authServiceCircuitBreaker:
+        base-config: default
+      userServiceCircuitBreaker: 
+        base-config: default
+      chatServiceCircuitBreaker:
+        base-config: default
+      historyServiceCircuitBreaker:
+        base-config: default
 
 # 관리 엔드포인트 설정
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,circuitbreakers,circuitbreakerevents
   endpoint:
     health:
       show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
 
 # 로깅 설정
 logging:
@@ -121,6 +211,9 @@ logging:
     org.springframework.cloud.gateway: DEBUG
     reactor.netty.http.client: DEBUG
     org.springframework.security: TRACE
+    # Basic Auth 관련 로깅 추가
+    org.springframework.security.web.server.authentication: TRACE
+    org.springframework.security.authentication: TRACE
 
 # SpringDoc OpenAPI 설정
 springdoc:
@@ -144,8 +237,12 @@ springdoc:
 app:
   security:
     csrf:
+      # CSRF 보호 비활성화 (회원가입 및 로그인 문제 해결)
+      enabled: false
       excluded-paths:
         - /api/auth/**
         - /chat-ws/**
         - /actuator/**
         - /api-docs/**
+
+
