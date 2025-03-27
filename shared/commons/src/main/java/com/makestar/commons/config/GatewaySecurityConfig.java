@@ -20,6 +20,7 @@ import org.springframework.http.HttpMethod;
  *   <li>GatewayAuthenticationFilter 적용</li>
  *   <li>공통 요청 권한 설정</li>
  *   <li>CSRF 및 세션 관리 설정</li>
+ *   <li>웹소켓 엔드포인트 허용</li>
  * </ul>
  */
 @Configuration
@@ -45,6 +46,8 @@ public class GatewaySecurityConfig {
                 .authorizeRequests(auth -> auth
                     // 인증 관련 엔드포인트는 인증 없이 접근 가능
                     .antMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token").permitAll()
+                    // 웹소켓 엔드포인트 접근 허용
+                    .antMatchers("/ws/**", "/chat-ws/**").permitAll()
                     // Actuator 엔드포인트 접근 허용
                     .antMatchers("/actuator/**").permitAll()
                     // API 문서 접근 허용
@@ -53,10 +56,6 @@ public class GatewaySecurityConfig {
                     .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     // 기타 모든 요청은 인증 필요
                     .anyRequest().authenticated())
-                // HTTP Basic 인증 비활성화
-                .httpBasic(httpBasic -> httpBasic.disable())
-                // 폼 로그인 비활성화
-                .formLogin(formLogin -> formLogin.disable())
                 // 게이트웨이 인증 필터 추가
                 .addFilterBefore(gatewayAuthenticationFilter(), org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .build();

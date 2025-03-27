@@ -207,13 +207,10 @@ management:
 # 로깅 설정
 logging:
   level:
-    com.makestar.apigateway: DEBUG
-    org.springframework.cloud.gateway: DEBUG
-    reactor.netty.http.client: DEBUG
-    org.springframework.security: TRACE
-    # Basic Auth 관련 로깅 추가
-    org.springframework.security.web.server.authentication: TRACE
-    org.springframework.security.authentication: TRACE
+    com.makestar.apigateway: INFO
+    org.springframework.cloud.gateway: INFO
+    reactor.netty.http.client: INFO
+    org.springframework.security: INFO
 
 # SpringDoc OpenAPI 설정
 springdoc:
