@@ -60,7 +60,8 @@ management:
 # 로깅 설정
 logging:
   level:
-    com.makestar.historyservice: DEBUG
+    com.makestar.history: DEBUG
+    org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     

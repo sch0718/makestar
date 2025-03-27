@@ -112,8 +112,9 @@ management:
 # 로깅 설정
 logging:
   level:
-    org.springframework.cloud.gateway: INFO
-    reactor.netty.http.client: INFO
+    com.makestar.api-gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
 
 # SpringDoc OpenAPI 설정
 springdoc:
@@ -132,3 +133,11 @@ springdoc:
         url: /api-docs/discovery
   api-docs:
     enabled: true
+
+# 보안 설정  
+app:
+  security:
+    csrf:
+      excluded-paths:
+        - /api/auth/**
+        - /chat-ws/**

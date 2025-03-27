@@ -16,6 +16,9 @@ dependencies {
         exclude group: 'org.apache.tomcat.embed', module: 'tomcat-embed-websocket'
     }
     
+    // Spring Security WebFlux
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    
     implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.2'

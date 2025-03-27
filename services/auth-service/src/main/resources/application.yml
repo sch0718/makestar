@@ -59,7 +59,10 @@ management:
 # 로깅 설정
 logging:
   level:
+    com.makestar.auth: DEBUG
     org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 # SpringDoc OpenAPI 설정
 springdoc:
