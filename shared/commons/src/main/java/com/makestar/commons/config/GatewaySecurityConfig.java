@@ -45,9 +45,7 @@ public class GatewaySecurityConfig {
                 // 요청 권한 설정
                 .authorizeRequests(auth -> auth
                     // 인증 관련 엔드포인트는 인증 없이 접근 가능
-                    .antMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token").permitAll()
-                    // 웹소켓 엔드포인트 접근 허용
-                    .antMatchers("/ws/**", "/chat-ws/**").permitAll()
+                    .antMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh-token", "/api/chat-ws/**").permitAll()
                     // Actuator 엔드포인트 접근 허용
                     .antMatchers("/actuator/**").permitAll()
                     // API 문서 접근 허용

@@ -91,9 +91,10 @@ spring:
         - id: websocket-chat
           uri: lb://chat-service  # 서비스 디스커버리 사용
           predicates:
-            - Path=/chat-ws/**
+            - Path=/api/chat-ws/**
           filters:
-            - StripPrefix=0
+            - RewritePath=/api/chat-ws(?<segment>/?.*), /api/chat-ws$\{segment}
+            - AddRequestHeader=X-Gateway-Auth, makestar-internal-gateway
         - id: auth-openapi
           uri: lb://auth-service
           predicates:

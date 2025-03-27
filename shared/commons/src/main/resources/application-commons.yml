@@ -9,7 +9,7 @@ gateway:
     allowed-ips: 127.0.0.1,${GATEWAY_SERVER_IP:10.0.0.1}
     
     # 인증 화이트리스트 경로 (쉼표로 구분)
-    whitelist-paths: /actuator/**,/api-docs/**,/error/**
+    whitelist-paths: /actuator/**,/api-docs/**,/error/**,/api/chat-ws/**
 
 # 서버 설정
 server:
