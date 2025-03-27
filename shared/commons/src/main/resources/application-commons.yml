@@ -1,0 +1,86 @@
+# 게이트웨이 보안 설정
+gateway:
+  security:
+    # 게이트웨이 인증 헤더 설정
+    header-name: X-Gateway-Auth
+    header-value: ${GATEWAY_AUTH_HEADER_VALUE:makestar-internal-gateway}
+    
+    # 접근 허용 IP 목록 (쉼표로 구분)
+    allowed-ips: 127.0.0.1,${GATEWAY_SERVER_IP:10.0.0.1}
+    
+    # 인증 화이트리스트 경로 (쉼표로 구분)
+    whitelist-paths: /actuator/**,/api-docs/**,/error/**
+
+# 서버 설정
+server:
+  # 외부 직접 접근을 제한하기 위해 로컬 주소에만 바인딩
+  address: 127.0.0.1 
+
+# Spring 설정
+spring:
+  # 클라우드 설정
+  cloud:
+    config:
+      import-check:
+        enabled: false
+
+  # 데이터베이스 설정
+  datasource:
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 1
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      pool-name: auth-service-pool
+      # connection-test-query: SELECT 1
+      validation-timeout: 30000
+
+  # JPA 설정
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+# JWT 설정
+jwt:
+  secret: makestar-secret-key-for-jwt-token-generation-and-validation-should-be-very-long
+  access-token-expiration: 3600000 # 1시간
+  refresh-token-expiration: 604800000 # 7일
+        
+# Eureka 설정
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    instance-id: ${spring.application.name}:${server.port}
+    prefer-ip-address: true
+
+# 관리 엔드포인트 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+# SpringDoc OpenAPI 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /api-docs/swagger-ui.html
+  packages-to-scan: com.makestar
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json

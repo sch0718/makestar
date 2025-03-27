@@ -20,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 인증 서비스 구현 클래스
@@ -109,16 +111,18 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByEmail(userDto.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다: " + userDto.getEmail());
         }
+
+        // 기본 역할 설정
+        Set<String> userRoles = new HashSet<>();
+        userRoles.add("USER");
         
         // 사용자 생성
         User user = User.builder()
                 .username(userDto.getUsername())
                 .email(userDto.getEmail())
                 .password(passwordEncoder.encode(userDto.getPassword()))
+                .roles(userRoles)
                 .build();
-        
-        // 기본 역할 부여
-        user.getRoles().add("USER");
         
         // 저장
         User savedUser = userRepository.save(user);

@@ -4,12 +4,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Spring Security 설정 클래스
@@ -21,34 +17,10 @@ import org.springframework.security.web.SecurityFilterChain;
  *   <li>보안 필터 체인 구성</li>
  *   <li>비밀번호 인코더 설정</li>
  *   <li>인증 관리자 설정</li>
- *   <li>CORS 및 CSRF 설정</li>
  * </ul>
  */
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
-
-    /**
-     * 보안 필터 체인 구성
-     * 
-     * <p>HTTP 보안 설정을 정의하고 필터 체인을 구성합니다.</p>
-     * 
-     * @param http HTTP 보안 설정 객체
-     * @return 구성된 SecurityFilterChain
-     * @throws Exception 보안 설정 중 발생할 수 있는 예외
-     */
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf().disable()
-            .authorizeRequests()
-                .antMatchers("/api/auth/**").permitAll()
-                .anyRequest().authenticated()
-            .and()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        
-        return http.build();
-    }
     
     /**
      * 비밀번호 인코더 빈 설정

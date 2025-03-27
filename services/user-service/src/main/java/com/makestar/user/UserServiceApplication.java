@@ -5,28 +5,32 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.ComponentScan;
 
 /**
- * User Service 애플리케이션의 메인 클래스입니다.
- * 사용자 관리, 친구 관계 관리 등의 기능을 제공하는 마이크로서비스입니다.
+ * MakeStar 유저 서비스의 메인 애플리케이션 클래스입니다.
+ * 이 클래스는 Spring Boot 애플리케이션의 시작점이며,
+ * Eureka Client와 Feign Client 기능을 활성화합니다.
  *
  * <p>주요 기능:</p>
  * <ul>
- *   <li>사용자 정보 관리 (생성, 조회, 수정, 삭제)</li>
- *   <li>친구 관계 관리 (친구 추가, 삭제, 조회)</li>
- *   <li>친구 요청 관리 (요청 생성, 수락, 거절)</li>
+ *   <li>사용자 정보 관리</li>
+ *   <li>친구 관계 관리</li>
+ *   <li>친구 요청 관리</li>
  * </ul>
- *
- * <p>사용된 Spring Cloud 기능:</p>
- * <ul>
- *   <li>Eureka Client: 서비스 디스커버리를 위한 Eureka 클라이언트 활성화</li>
- *   <li>Feign Client: 다른 마이크로서비스와의 통신을 위한 선언적 REST 클라이언트 활성화</li>
- * </ul>
+ * 
+ * @EnableEurekaClient: 서비스 디스커버리를 위한 Eureka Client 활성화
+ * @EnableFeignClients: 서비스 간 통신을 위한 Feign Client 활성화
  */
 @SpringBootApplication
 @EnableEurekaClient
 @EnableFeignClients
-@EntityScan(basePackages = {"com.makestar.user.entity", "com.makestar.commons.model"})
+@EntityScan(basePackages = {"com.makestar.user.model", "com.makestar.user.entity", "com.makestar.commons.model"})
+@ComponentScan(basePackages = {
+    "com.makestar.user",
+    "com.makestar.commons.utils",
+    "com.makestar.commons.config"
+})
 public class UserServiceApplication {
 
     /**

@@ -1,3 +1,6 @@
+## 인증 서비스 설정
+
+# 서버 설정
 server:
   port: 8081
 
@@ -5,71 +8,21 @@ server:
 spring:
   application:
     name: auth-service
-  cloud:
-    config:
-      import-check:
-        enabled: false
+  # 공통 프로파일 활성화
+  profiles:
+    include: commons
+  
   # 데이터베이스 설정
   datasource:
     url: ${SUPABASE_AUTH_DB_URL}
     username: ${SUPABASE_AUTH_DB_USER}
     password: ${SUPABASE_AUTH_DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 2
-      minimum-idle: 1
-      idle-timeout: 30000
-      max-lifetime: 1800000
-      connection-timeout: 30000
-      pool-name: auth-service-pool
-      # connection-test-query: SELECT 1
-      validation-timeout: 30000
-  # JPA 설정
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-
-# Eureka 설정
-eureka:
-  client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    preferIpAddress: true
-    instanceId: ${spring.application.name}:${spring.cloud.client.hostname}:${server.port}
-
-# JWT 설정
-jwt:
-  secret: makestar-secret-key-for-jwt-token-generation-and-validation-should-be-very-long
-  access-token-expiration: 3600000 # 1시간
-  refresh-token-expiration: 604800000 # 7일
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
 
 # 로깅 설정
 logging:
   level:
-    com.makestar.auth: DEBUG
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-
-# SpringDoc OpenAPI 설정
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-  packages-to-scan: com.makestar.auth
-  default-consumes-media-type: application/json
-  default-produces-media-type: application/json
+    com.makestar.auth: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+    org.springframework.security: INFO

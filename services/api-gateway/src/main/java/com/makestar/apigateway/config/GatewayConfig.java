@@ -23,7 +23,7 @@ import java.util.Collections;
  *   <li>서비스 디스커버리 통합</li>
  * </ul>
  */
-@Configuration
+// @Configuration
 public class GatewayConfig {
     
     /**
@@ -39,7 +39,7 @@ public class GatewayConfig {
      *
      * @return CorsWebFilter CORS 설정이 적용된 웹 필터
      */
-    @Bean
+    // @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
         corsConfig.setAllowedOrigins(Collections.singletonList("*"));

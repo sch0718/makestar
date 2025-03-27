@@ -19,7 +19,7 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "*"
+            allowed-origin-patterns: "*"
             allowed-methods: "*"
             allowed-headers: "*"
             allow-credentials: true
@@ -112,9 +112,10 @@ management:
 # 로깅 설정
 logging:
   level:
-    com.makestar.api-gateway: DEBUG
+    com.makestar.apigateway: DEBUG
     org.springframework.cloud.gateway: DEBUG
     reactor.netty.http.client: DEBUG
+    org.springframework.security: TRACE
 
 # SpringDoc OpenAPI 설정
 springdoc:
@@ -141,3 +142,5 @@ app:
       excluded-paths:
         - /api/auth/**
         - /chat-ws/**
+        - /actuator/**
+        - /api-docs/**
