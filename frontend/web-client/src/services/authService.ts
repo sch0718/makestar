@@ -25,25 +25,25 @@ export interface AuthResponse {
 const authService = {
   // 로그인
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/login', data);
+    const response = await api.post<AuthResponse>('/api/auth/login', data);
     return response.data;
   },
   
   // 회원가입
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/register', data);
+    const response = await api.post<AuthResponse>('/api/auth/register', data);
     return response.data;
   },
   
   // 사용자 정보 가져오기
   async getUserInfo(): Promise<any> {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/api/auth/me');
     return response.data;
   },
   
   // 로그아웃
   async logout(): Promise<void> {
-    await api.post('/auth/logout');
+    await api.post('/api/auth/logout');
     localStorage.removeItem('token');
   }
 };
