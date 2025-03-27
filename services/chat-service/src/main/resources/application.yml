@@ -24,6 +24,10 @@ spring:
       pool-name: chat-service-pool
       # connection-test-query: SELECT 1
       validation-timeout: 30000
+  # MongoDB 설정
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/chatdb}
   # JPA 설정
   jpa:
     open-in-view: false
