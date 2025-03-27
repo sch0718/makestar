@@ -22,6 +22,9 @@ dependencies {
     
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     
+    // SpringDoc OpenAPI - WebFlux 환경에 맞는 의존성 사용
+    implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.7.0'
+    
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
     

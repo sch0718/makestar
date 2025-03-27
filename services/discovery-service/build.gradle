@@ -19,6 +19,10 @@ dependencies {
     implementation 'com.sun.jersey.contribs:jersey-apache-client4:1.19.4'
     implementation 'javax.inject:javax.inject:1'
     
+    // SpringDoc OpenAPI
+    implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
+    implementation 'org.springdoc:springdoc-openapi-webmvc-core:1.7.0'
+    
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 

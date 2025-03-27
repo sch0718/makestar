@@ -80,6 +80,9 @@ subprojects {
         implementation "org.springframework.cloud:spring-cloud-starter-openfeign"
         implementation "org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j"
         
+        // Caffeine 캐시
+        implementation 'com.github.ben-manes.caffeine:caffeine'
+        
         // Lombok
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
