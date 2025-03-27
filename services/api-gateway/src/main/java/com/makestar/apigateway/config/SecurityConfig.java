@@ -102,6 +102,8 @@ public class SecurityConfig {
         
         // 경로 기반 보안 규칙 설정
         http.authorizeExchange(exchanges -> exchanges
+            // 웹소켓 연결은 항상 인증 없이 접근 가능
+            .pathMatchers("/api/chat-ws", "/api/chat-ws/**").permitAll()
             // 공용 엔드포인트 (인증 필요 없음)
             .pathMatchers("/api/auth/**", "/chat-ws/**", "/actuator/**", "/api-docs/**").permitAll()
             // Swagger/OpenAPI 관련 경로 허용

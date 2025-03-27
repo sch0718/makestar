@@ -1,10 +1,16 @@
 package com.makestar.chat.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * WebSocket 통신을 위한 설정 클래스입니다.
@@ -13,7 +19,22 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  */
 @Configuration
 @EnableWebSocketMessageBroker
+@Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    /**
+     * WebSocket 하트비트를 위한 TaskScheduler 빈을 생성합니다.
+     * 이 스케줄러는 클라이언트와 서버 간의 하트비트 메시지를 주기적으로 전송하는 데 사용됩니다.
+     * 
+     * @return 스레드 풀 기반 TaskScheduler 인스턴스
+     */
+    @Bean
+    public TaskScheduler webSocketHeartbeatTaskScheduler() {
+        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+        taskScheduler.setPoolSize(1);
+        taskScheduler.setThreadNamePrefix("ws-heartbeat-thread-");
+        return taskScheduler;
+    }
 
     /**
      * WebSocket 연결을 위한 엔드포인트를 등록합니다.
@@ -23,9 +44,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")  // CORS 설정
-                .withSockJS();  // SockJS 지원 활성화
+        registry.addEndpoint("/api/chat-ws")
+                .setAllowedOriginPatterns("*")
+                .withSockJS()
+                .setSupressCors(true)
+                .setSessionCookieNeeded(false)
+                .setHeartbeatTime(25000);
     }
 
     /**
@@ -40,8 +64,23 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      */
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic", "/queue");
+        registry.enableSimpleBroker("/topic", "/queue")
+               .setHeartbeatValue(new long[] {10000, 10000}) // 클라이언트와 서버 하트비트 간격 설정
+               .setTaskScheduler(webSocketHeartbeatTaskScheduler()); // 하트비트 스케줄러 설정
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");
+    }
+    
+    /**
+     * WebSocket 전송 설정을 구성합니다.
+     * 메시지 크기 제한, 시간 제한 등을 설정합니다.
+     *
+     * @param registration WebSocket 전송 등록 객체
+     */
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.setMessageSizeLimit(64 * 1024) // 64KB
+                   .setSendBufferSizeLimit(512 * 1024) // 512KB
+                   .setSendTimeLimit(20000); // 20 seconds
     }
 } 

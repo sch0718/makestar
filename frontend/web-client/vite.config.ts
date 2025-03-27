@@ -1,13 +1,21 @@
+import { fileURLToPath, URL } from 'node:url'
+
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+  ],
+  define: {
+    global: 'window',
+  },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'stompjs': '@stomp/stompjs',
+      'sockjs-client': fileURLToPath(new URL('./node_modules/sockjs-client/dist/sockjs.js', import.meta.url))
     }
   },
   server: {
@@ -19,7 +27,7 @@ export default defineConfig({
         secure: false,
         ws: false
       },
-      '/chat-ws': {
+      '/api/chat-ws': {
         target: 'ws://localhost:8080',
         ws: true,
         changeOrigin: true

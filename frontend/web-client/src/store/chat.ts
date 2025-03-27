@@ -1,136 +1,136 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import io, { Socket } from 'socket.io-client';
+import { ref, computed, watch } from 'vue';
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
 import axios from 'axios';
 import { useAuthStore } from './auth';
+import { useRouter } from 'vue-router';
 
 export interface ChatRoom {
   id: number;
   name: string;
-  description?: string;
-  type: 'DIRECT' | 'GROUP';
-  lastMessage?: Message;
+  lastMessage?: string;
+  lastMessageTime?: string;
   unreadCount: number;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface Message {
   id: number;
-  roomId: number;
-  userId: number;
-  username: string;
+  senderId: number;
+  senderName: string;
   content: string;
-  createdAt: string;
-  updatedAt: string;
-  isRead: boolean;
+  timestamp: string;
+  roomId: number;
 }
 
-// Mock 서비스를 대체하기 위한 임시 서비스
-export const chatService = {
-  getChatRooms: async (): Promise<ChatRoom[]> => {
-    const response = await axios.get('/api/chat/rooms');
-    return response.data;
-  },
-  
-  getMessages: async (roomId: number): Promise<Message[]> => {
-    const response = await axios.get(`/api/chat/rooms/${roomId}/messages`);
-    return response.data;
-  },
-  
-  sendMessage: async (roomId: number, content: string): Promise<Message> => {
-    const response = await axios.post(`/api/chat/rooms/${roomId}/messages`, { content });
-    return response.data;
-  },
-  
-  createChatRoom: async (name: string, participants: string[]): Promise<ChatRoom> => {
-    const response = await axios.post('/api/chat/rooms', { name, participants });
-    return response.data;
-  },
-  
-  markAsRead: async (roomId: number): Promise<void> => {
-    await axios.put(`/api/chat/rooms/${roomId}/read`);
-  },
-  
-  leaveRoom: async (roomId: number): Promise<void> => {
-    await axios.delete(`/api/chat/rooms/${roomId}/leave`);
-  }
-};
-
+/**
+ * 채팅 관련 상태 및 기능을 관리하는 스토어입니다.
+ * WebSocket 연결, 메시지 송수신, 채팅방 관리 등의 기능을 제공합니다.
+ */
 export const useChatStore = defineStore('chat', () => {
-  // 상태
+  // State
   const rooms = ref<ChatRoom[]>([]);
   const currentRoomId = ref<number | null>(null);
   const messages = ref<Message[]>([]);
-  const socket = ref<Socket | null>(null);
+  const stompClient = ref<Client | null>(null);
   const typingUsers = ref<Record<number, string[]>>({});
   const isConnected = ref(false);
+  const isConnecting = ref(false);
+  const connectionError = ref<string | null>(null);
   const reconnectAttempts = ref(0);
   const maxReconnectAttempts = 5;
-  const reconnectInterval = ref<number | null>(null);
   const socketError = ref<string | null>(null);
+  const connecting = ref(false);
+  const connected = ref(false);
+  const socket = ref<WebSocket | null>(null);
+  
+  // 서버의 기본 URL을 환경에 따라 결정합니다
+  const getBaseUrl = () => {
+    // 개발 환경에서는 localhost 사용, 그 외에는 현재 호스트 사용
+    return (import.meta.env as any)?.DEV 
+      ? 'http://localhost:8080'
+      : window.location.origin;
+  };
 
   // Getter
-  const currentRoom = computed(() => {
-    if (currentRoomId.value === null) return null;
-    return rooms.value.find(room => room.id === currentRoomId.value) || null;
-  });
+  const currentRoom = computed(() => 
+    rooms.value.find(room => room.id === currentRoomId.value) || null
+  );
 
+  // 채팅방 목록을 마지막 메시지 시간 기준으로 정렬
   const sortedRooms = computed(() => {
     return [...rooms.value].sort((a, b) => {
-      // 마지막 메시지가 있는 경우 마지막 메시지 시간으로 정렬
-      if (a.lastMessage && b.lastMessage) {
-        return new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime();
-      }
-      // 마지막 메시지가 없는 경우 방 생성 시간으로 정렬
-      if (!a.lastMessage && !b.lastMessage) {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      // 마지막 메시지가 있는 방이 위로
-      return a.lastMessage ? -1 : 1;
+      // 마지막 메시지가 없는 경우 생성일 기준으로 정렬
+      const timeA = a.lastMessageTime || a.createdAt || '';
+      const timeB = b.lastMessageTime || b.createdAt || '';
+      // 최신 메시지가 위로 오도록 내림차순 정렬
+      return new Date(timeB).getTime() - new Date(timeA).getTime();
     });
   });
 
-  // 액션
-  // 채팅방 목록 로드
-  const loadChatRooms = async () => {
+  // 특정 방의 메시지 목록 반환
+  const getRoomMessages = computed(() => 
+    messages.value.filter(msg => msg.roomId === currentRoomId.value)
+  );
+
+  // 방 목록 불러오기
+  const fetchRooms = async () => {
     try {
-      const response = await chatService.getChatRooms();
-      rooms.value = response;
+      const response = await axios.get('/api/chat/rooms');
+      rooms.value = response.data;
+      return response.data;
     } catch (error) {
-      console.error('채팅방 로드 오류:', error);
+      console.error('Error fetching chat rooms:', error);
       throw error;
     }
   };
 
-  // 특정 채팅방 선택
-  const selectRoom = async (roomId: number) => {
+  // 특정 방의 메시지 불러오기
+  const fetchMessages = async (roomId: number) => {
     try {
-      currentRoomId.value = roomId;
-      const loadedMessages = await chatService.getMessages(roomId);
-      messages.value = loadedMessages;
+      const response = await axios.get(`/api/chat/rooms/${roomId}/messages`);
+      // 방에 해당하는 메시지만 필터링하여 상태에 추가
+      const roomMessages = response.data;
       
-      // 읽음 처리
-      const room = rooms.value.find(r => r.id === roomId);
-      if (room && room.unreadCount) {
-        room.unreadCount = 0;
-        await chatService.markAsRead(roomId);
-      }
+      // 기존 메시지 중 현재 방이 아닌 메시지들만 유지
+      const otherMessages = messages.value.filter(msg => msg.roomId !== roomId);
+      
+      // 새로운 메시지와 기존 다른 방 메시지를 합침
+      messages.value = [...otherMessages, ...roomMessages];
+      
+      return roomMessages;
     } catch (error) {
-      console.error('메시지 로드 오류:', error);
+      console.error(`Error fetching messages for room ${roomId}:`, error);
       throw error;
     }
   };
 
-  // 새 채팅방 생성
-  const createRoom = async (roomData: { name: string; participants: string[] }) => {
-    try {
-      const newRoom = await chatService.createChatRoom(roomData.name, roomData.participants);
-      rooms.value.push(newRoom);
-      await selectRoom(newRoom.id);
-      return newRoom;
-    } catch (error) {
-      console.error('채팅방 생성 오류:', error);
-      throw error;
+  // 방 선택
+  const selectRoom = async (roomId: number) => {
+    currentRoomId.value = roomId;
+    await fetchMessages(roomId);
+    // 읽지 않은 메시지 카운트 초기화
+    const room = rooms.value.find(r => r.id === roomId);
+    if (room) {
+      room.unreadCount = 0;
+    }
+  };
+
+  // 메시지 추가
+  const addMessage = (message: Message) => {
+    messages.value.push(message);
+    
+    // 해당 방의 lastMessage와 시간 업데이트
+    const room = rooms.value.find(r => r.id === message.roomId);
+    if (room) {
+      room.lastMessage = message.content;
+      room.lastMessageTime = message.timestamp;
+      
+      // 현재 선택된 방이 아니라면 안 읽은 메시지 카운트 증가
+      if (currentRoomId.value !== message.roomId) {
+        room.unreadCount += 1;
+      }
     }
   };
 
@@ -143,13 +143,22 @@ export const useChatStore = defineStore('chat', () => {
     const roomId = currentRoomId.value;
     
     try {
-      if (socket.value && isConnected.value) {
-        // 소켓으로 메시지 전송
-        socket.value.emit('message', { roomId, content });
+      if (stompClient.value && stompClient.value.connected) {
+        // STOMP로 메시지 전송
+        stompClient.value.publish({
+          destination: `/app/chat/${roomId}/send`,
+          body: JSON.stringify({ content }),
+          headers: {
+            'content-type': 'application/json'
+          }
+        });
+        return true;
       } else {
         // HTTP 폴백
-        const message = await chatService.sendMessage(roomId, content);
+        const response = await axios.post(`/api/chat/rooms/${roomId}/messages`, { content });
+        const message = response.data;
         addMessage(message);
+        return true;
       }
     } catch (error) {
       console.error('메시지 전송 오류:', error);
@@ -158,159 +167,336 @@ export const useChatStore = defineStore('chat', () => {
       if (!isConnected.value) {
         attemptReconnect();
       }
-      throw error;
+      return false;
     }
   };
 
-  // 타이핑 상태 전송
+  // 웹소켓 메시지 전송 (일반 목적용)
+  const sendWebSocketMessage = (destination: string, body: any) => {
+    if (!stompClient.value?.connected) {
+      console.debug('Cannot send message: not connected');
+      initializeWebSocketConnection();
+      return false;
+    }
+
+    try {
+      console.debug(`Sending message to ${destination}`, body);
+      stompClient.value.publish({
+        destination,
+        body: JSON.stringify(body),
+        headers: {
+          'content-type': 'application/json'
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Failed to send message', error);
+      return false;
+    }
+  };
+
+  // 타이핑 중 상태 전송
   const sendTypingStatus = (isTyping: boolean) => {
-    if (!currentRoomId.value || !socket.value || !isConnected.value) return;
+    if (!currentRoomId.value) return;
     
-    socket.value.emit('typing', {
-      roomId: currentRoomId.value,
-      isTyping
-    });
-  };
-
-  // 메시지 추가 (소켓 수신용)
-  const addMessage = (message: Message) => {
-    messages.value.push(message);
+    const roomId = currentRoomId.value;
+    const authStore = useAuthStore();
     
-    // 현재 보고 있는 방이 아닌 경우 읽지 않은 메시지 카운트 증가
-    if (message.roomId !== currentRoomId.value) {
-      const room = rooms.value.find(r => r.id === message.roomId);
-      if (room) {
-        room.unreadCount = (room.unreadCount || 0) + 1;
-        room.lastMessage = message;
-      }
+    if (authStore.user?.id) {
+      stompClient.value?.publish({
+        destination: `/app/chat/${roomId}/typing`,
+        body: JSON.stringify({ isTyping })
+      });
     }
   };
-
-  // 재연결 시도
+  
+  // 소켓 연결 재시도
   const attemptReconnect = () => {
-    // 이미 재연결 시도 중이면 무시
-    if (reconnectInterval.value) return;
-    
-    // 최대 재연결 시도 횟수 초과 확인
     if (reconnectAttempts.value >= maxReconnectAttempts) {
-      socketError.value = '연결에 반복적으로 실패했습니다. 페이지를 새로고침하거나 나중에 다시 시도해주세요.';
+      socketError.value = '연결 시도 횟수를 초과했습니다. 페이지를 새로고침해주세요.';
       return;
     }
     
-    reconnectAttempts.value++;
-    console.log(`WebSocket 재연결 시도 (${reconnectAttempts.value}/${maxReconnectAttempts})...`);
-    
-    // 지수 백오프로 재연결 간격 계산 (1초, 2초, 4초, 8초, 16초)
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value - 1), 30000);
-    
-    reconnectInterval.value = window.setTimeout(() => {
-      reconnectInterval.value = null;
-      initSocket();
-    }, delay);
-  };
-
-  // 소켓 연결 초기화
-  const initSocket = () => {
-    const authStore = useAuthStore();
-    
-    if (!authStore.token) return;
-    
-    if (socket.value) {
-      socket.value.disconnect();
-    }
-    
-    // 소켓 오류 초기화
-    socketError.value = null;
-    
-    socket.value = io(process.env.VUE_APP_API_URL || 'http://localhost:3000', {
-      auth: {
-        token: authStore.token
-      },
-      reconnection: false, // 자체 재연결 로직 사용
-    });
-    
-    // 연결 이벤트
-    socket.value.on('connect', () => {
-      isConnected.value = true;
-      reconnectAttempts.value = 0; // 연결 성공 시 재시도 카운트 초기화
-      console.log('웹소켓 연결됨');
-    });
-    
-    // 연결 끊김 이벤트
-    socket.value.on('disconnect', () => {
-      isConnected.value = false;
-      console.log('웹소켓 연결 끊김');
-      socketError.value = '서버와의 연결이 끊어졌습니다. 재연결을 시도합니다...';
-      attemptReconnect();
-    });
-    
-    // 에러 이벤트
-    socket.value.on('connect_error', (error) => {
-      isConnected.value = false;
-      console.error('웹소켓 연결 오류:', error);
-      socketError.value = '서버 연결에 실패했습니다. 재연결을 시도합니다...';
-      attemptReconnect();
-    });
-    
-    // 메시지 수신
-    socket.value.on('message', (message: Message) => {
-      addMessage(message);
-    });
-    
-    // 타이핑 상태 수신
-    socket.value.on('typing', ({ roomId, userId, username, isTyping }: any) => {
-      if (!typingUsers.value[roomId]) {
-        typingUsers.value[roomId] = [];
-      }
-      
-      if (isTyping && !typingUsers.value[roomId].includes(username)) {
-        typingUsers.value[roomId].push(username);
-      } else if (!isTyping) {
-        typingUsers.value[roomId] = typingUsers.value[roomId].filter(user => user !== username);
-      }
-    });
+    reconnectAttempts.value += 1;
+    setTimeout(() => {
+      initializeWebSocketConnection();
+    }, Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000)); // 지수 백오프 (최대 30초)
   };
   
-  // 연결 종료
-  const disconnect = () => {
+  // WebSocket 초기화 (기존 방식)
+  const initSocket = () => {
+    if (connecting.value) return;
+    connecting.value = true;
+    
+    try {
+      // 인증 스토어에서 토큰 가져오기
+      const authStore = useAuthStore();
+      const token = authStore.token || localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('Authentication token not available');
+        socketError.value = '인증 정보가 없습니다.';
+        connecting.value = false;
+        return;
+      }
+      
+      // 웹소켓 연결
+      const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws?token=${token}`;
+      const newSocket = new WebSocket(wsUrl);
+      
+      newSocket.onopen = () => {
+        socket.value = newSocket;
+        connected.value = true;
+        connecting.value = false;
+        socketError.value = null;
+      };
+      
+      newSocket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'CHAT') {
+            addMessage(data.message);
+          } else if (data.type === 'TYPING') {
+            handleTypingEvent(data);
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+      
+      newSocket.onclose = () => {
+        socket.value = null;
+        connected.value = false;
+        connecting.value = false;
+        // 자동 재연결 시도
+        setTimeout(initSocket, 3000);
+      };
+      
+      newSocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        socket.value = null;
+        connected.value = false;
+        connecting.value = false;
+        socketError.value = '연결 오류가 발생했습니다.';
+      };
+    } catch (error) {
+      console.error('Failed to initialize WebSocket:', error);
+      connecting.value = false;
+      socketError.value = '연결 초기화에 실패했습니다.';
+    }
+  };
+  
+  // WebSocket 연결 종료 (기존 방식)
+  const disconnectSocket = () => {
     if (socket.value) {
-      socket.value.disconnect();
+      socket.value.close();
       socket.value = null;
-      isConnected.value = false;
+      connected.value = false;
     }
-    
-    // 재연결 타이머가 있으면 중지
-    if (reconnectInterval.value) {
-      clearTimeout(reconnectInterval.value);
-      reconnectInterval.value = null;
-    }
-    
-    // 재연결 카운터 초기화
-    reconnectAttempts.value = 0;
-    socketError.value = null;
   };
 
+  /**
+   * WebSocket 연결을 초기화합니다.
+   * SockJS를 통해 서버와 연결하고 STOMP 클라이언트를 설정합니다.
+   */
+  const initializeWebSocketConnection = () => {
+    try {
+      isConnecting.value = true;
+      connectionError.value = null;
+
+      if (stompClient.value?.connected) {
+        console.debug('Already connected to WebSocket');
+        isConnected.value = true;
+        isConnecting.value = false;
+        return;
+      }
+
+      // 인증 토큰 가져오기
+      const authStore = useAuthStore();
+      const token = authStore.token;
+      if (!token) {
+        console.debug('No authentication token available');
+        connectionError.value = '인증 정보가 없습니다.';
+        isConnecting.value = false;
+        return;
+      }
+
+      const baseUrl = getBaseUrl();
+      const wsUrl = `${baseUrl}/api/chat-ws`;
+      console.debug(`Connecting to WebSocket at ${wsUrl}`);
+
+      // SockJS 연결 생성 (withCredentials 옵션 추가)
+      const socket = new SockJS(wsUrl, null, {
+        transports: ['websocket', 'xhr-streaming', 'xhr-polling'],
+        timeout: 10000,
+        withCredentials: true
+      });
+
+      // STOMP 클라이언트 생성 및 설정
+      const client = new Client({
+        webSocketFactory: () => socket,
+        debug: (str) => {
+          // 개발 환경에서만 디버그 메시지 출력
+          if ((import.meta.env as any)?.DEV) {
+            console.debug(str);
+          }
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        connectHeaders: {
+          'X-Authorization': `Bearer ${token}`
+        },
+        onConnect: () => {
+          console.debug('Connected to WebSocket');
+          isConnected.value = true;
+          isConnecting.value = false;
+          subscribeToPersonalMessages();
+        },
+        onStompError: (frame) => {
+          console.error('STOMP error', frame);
+          connectionError.value = `STOMP error: ${frame.headers['message']}`;
+          isConnecting.value = false;
+          handleDisconnection();
+        },
+        onWebSocketClose: (event) => {
+          console.debug('WebSocket connection closed', event);
+          isConnected.value = false;
+          if (event.code !== 1000) {
+            connectionError.value = `연결이 종료되었습니다: ${event.reason || '알 수 없는 이유'}`;
+            handleDisconnection();
+          }
+        },
+        onWebSocketError: (event) => {
+          console.error('WebSocket error', event);
+          connectionError.value = '웹소켓 연결 오류가 발생했습니다.';
+          isConnecting.value = false;
+          handleDisconnection();
+        }
+      });
+
+      stompClient.value = client;
+      client.activate();
+    } catch (error) {
+      console.error('Failed to initialize WebSocket connection', error);
+      connectionError.value = `연결 초기화 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`;
+      isConnecting.value = false;
+      handleDisconnection();
+    }
+  };
+
+  /**
+   * 개인 메시지를 구독합니다.
+   * 사용자별 구독 경로를 설정하여 개인 메시지를 수신합니다.
+   */
+  const subscribeToPersonalMessages = () => {
+    const authStore = useAuthStore();
+    if (!stompClient.value?.connected || !authStore.user?.id) {
+      console.debug('Cannot subscribe: not connected or no user ID');
+      return;
+    }
+
+    const userId = authStore.user.id;
+    const personalMessagesTopic = `/user/${userId}/queue/messages`;
+    
+    console.debug(`Subscribing to personal messages at ${personalMessagesTopic}`);
+    
+    stompClient.value.subscribe(personalMessagesTopic, (message) => {
+      try {
+        const receivedMessage = JSON.parse(message.body);
+        console.debug('Received message:', receivedMessage);
+        addMessage(receivedMessage);
+      } catch (error) {
+        console.error('Error parsing received message', error);
+      }
+    });
+  };
+
+  /**
+   * 연결 해제 처리를 담당합니다.
+   * 연결 오류 시 인증 상태를 확인하고 필요시 재로그인을 유도합니다.
+   */
+  const handleDisconnection = () => {
+    isConnected.value = false;
+    
+    // 인증 관련 오류인 경우 재로그인 유도
+    if (connectionError.value?.includes('인증') || connectionError.value?.includes('권한')) {
+      const authStore = useAuthStore();
+      authStore.logout(); // clearAuth 대신 사용 가능한 logout 메소드
+      const router = useRouter();
+      router.push('/login');
+    }
+  };
+
+  // 웹소켓 연결 종료 (STOMP/SockJS 방식)
+  const disconnect = () => {
+    if (stompClient.value?.connected) {
+      console.debug('Disconnecting from WebSocket');
+      stompClient.value.deactivate();
+    }
+    isConnected.value = false;
+  };
+  
+  // 타이핑 이벤트 처리
+  const handleTypingEvent = (data: any) => {
+    const { roomId, userId, username, isTyping } = data;
+    
+    if (!typingUsers.value[roomId]) {
+      typingUsers.value[roomId] = [];
+    }
+    
+    if (isTyping) {
+      // 이미 타이핑 목록에 없는 경우에만 추가
+      if (!typingUsers.value[roomId].includes(username)) {
+        typingUsers.value[roomId].push(username);
+      }
+    } else {
+      // 타이핑 중지한 사용자 제거
+      typingUsers.value[roomId] = typingUsers.value[roomId].filter(name => name !== username);
+    }
+  };
+
+  // 인증 상태 변경 감시
+  watch(() => {
+    const authStore = useAuthStore();
+    return authStore.token; // isAuthenticated 대신 token 사용
+  }, (token) => {
+    if (token) {
+      console.debug('Authentication state changed: authenticated');
+      initializeWebSocketConnection();
+    } else {
+      console.debug('Authentication state changed: not authenticated');
+      disconnectSocket();
+      disconnect();
+    }
+  }, { immediate: true });
+
   return {
-    // 상태
     rooms,
     currentRoomId,
+    currentRoom,
     messages,
+    getRoomMessages,
     typingUsers,
     isConnected,
+    isConnecting,
+    connectionError,
     socketError,
-    
-    // Getter
-    currentRoom,
-    sortedRooms,
-    
-    // 액션
-    loadChatRooms,
+    connecting,
+    connected,
+    fetchRooms,
+    fetchMessages,
     selectRoom,
-    createRoom,
+    addMessage,
     sendMessage,
     sendTypingStatus,
     initSocket,
+    disconnectSocket,
+    attemptReconnect,
+    initializeWebSocketConnection,
     disconnect,
-    attemptReconnect
+    subscribeToPersonalMessages,
+    sendWebSocketMessage,
+    sortedRooms
   };
 }); 

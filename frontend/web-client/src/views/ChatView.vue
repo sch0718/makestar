@@ -31,7 +31,7 @@ onMounted(async () => {
 
 // 컴포넌트 언마운트 시 연결 해제
 onUnmounted(() => {
-  chatStore.disconnect();
+  chatStore.disconnectSocket();
 });
 
 // 새 채팅방 생성 페이지로 이동

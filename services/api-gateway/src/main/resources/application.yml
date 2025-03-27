@@ -95,6 +95,10 @@ spring:
           filters:
             - RewritePath=/api/chat-ws(?<segment>/?.*), /api/chat-ws$\{segment}
             - AddRequestHeader=X-Gateway-Auth, makestar-internal-gateway
+            - name: CircuitBreaker
+              args:
+                name: chatServiceCircuitBreaker
+                fallbackUri: forward:/fallback/chat-service
         - id: auth-openapi
           uri: lb://auth-service
           predicates:
@@ -143,6 +147,14 @@ spring:
   redis:
     host: localhost
     port: 6379
+  security:
+    csrf:
+      cookieName: XSRF-TOKEN
+      headerName: X-XSRF-TOKEN
+      excludedPaths:
+        - /api/auth/**
+        - /api/chat-ws/**
+        - /actuator/**
 
 # JWT 설정
 jwt:
@@ -239,8 +251,8 @@ app:
       enabled: false
       excluded-paths:
         - /api/auth/**
-        - /chat-ws/**
         - /actuator/**
         - /api-docs/**
+        - /api/chat-ws/**
 
 
