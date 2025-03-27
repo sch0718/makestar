@@ -33,7 +33,7 @@ onMounted(() => {
 
   <footer class="app-footer">
     <div class="container">
-      <p>&copy; 2023 MakeStar Chat. All rights reserved.</p>
+      <p>&copy; 2025 MakeStar Chat. All rights reserved.</p>
     </div>
   </footer>
 </template>
