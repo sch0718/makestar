@@ -10,6 +10,8 @@
 
 이 프로젝트는 채팅을 위한 서버와 클라이언트 두 가지 주요 기능을 포함하고 있습니다.
 
+개발 과정과 이 과제의 내용입니다.
+
 - [문제 보기](./docs/TEST.md)
 
 - [삽질 보기](./docs/TROUBLE_SHOOTING.md)
@@ -28,7 +30,7 @@ MakeStar는 마이크로서비스 아키텍처(MSA)를 기반으로 구축된 �
 
 ## 시스템 아키텍처
 
-MakeStar 채팅 시스템은 다음과 같은 마이크로서비스로 구성되어 있습니다:
+MakeStar 채팅 시스템은 모노레포(Monorepo) 구조로 다음과 같은 마이크로서비스로 구성되어 있습니다:
 
 ```mermaid
 graph TD
@@ -78,12 +80,13 @@ graph TD
 - **백엔드**:
   - Java 11+
   - Spring Boot 2.7.x
-  - Spring Cloud (Gateway, OpenFeign, Eureka)
+  - Spring Cloud 2021.0.x (Gateway, OpenFeign, Eureka, Circuit Breaker)
   - Spring Security + JWT
   - Spring WebSocket
   - JPA / Hibernate
-  - PostgreSQL / MongoDB
-  - RabbitMQ / Kafka
+  - SpringDoc OpenAPI (API 문서화)
+  - PostgreSQL (Supabase)
+  - MongoDB Atlas
 
 - **프론트엔드**:
   - Vue.js 3
@@ -97,23 +100,47 @@ graph TD
   - Gradle (빌드 도구)
   - Git (버전 관리)
 
+## 모노레포 구조
+
+프로젝트는 다음과 같은 모노레포 구조로 관리됩니다:
+
+```
+makestar/
+├── services/                       # 백엔드 마이크로서비스
+│   ├── discovery-service/          # Discovery 서비스 (Eureka)
+│   ├── api-gateway/                # API Gateway 서비스
+│   ├── auth-service/               # 인증 서비스
+│   ├── user-service/               # 사용자 서비스
+│   ├── chat-service/               # 채팅 서비스
+│   └── history-service/            # 히스토리 서비스
+├── frontend/                       # 프론트엔드 애플리케이션
+│   └── web-client/                 # Vue 웹 클라이언트
+├── shared/                         # 공유 라이브러리 및 모듈
+│   ├── commons/                    # 공통 클래스
+├── docs/                           # 프로젝트 문서
+├── settings.gradle                 # Gradle 설정
+├── build.gradle                    # 루트 빌드 파일
+└── README.md                       # 프로젝트 소개
+```
+
 ## 서비스 설명
 
 ### Discovery Service
 
-Discovery Service는 서비스 등록 및 검색을 담당합니다:
+Discovery Service는 Netflix Eureka를 기반으로 서비스 등록 및 검색을 담당합니다:
 
-- Netflix Eureka 서버를 기반으로 구현
 - 모든 마이크로서비스의 등록 처리
 - 서비스 위치 정보 제공
 - 상태 모니터링 및 장애 감지
+- 로드 밸런싱 지원
 
 ### API Gateway
 
-API Gateway는 모든 클라이언트 요청의 진입점 역할을 합니다. 주요 책임은 다음과 같습니다:
+API Gateway는 Spring Cloud Gateway를 기반으로 구현되어 모든 클라이언트 요청의 진입점 역할을 합니다:
 
 - 요청 라우팅: 클라이언트 요청을 적절한 마이크로서비스로 라우팅
 - 인증 및 권한 부여: JWT 토큰 검증을 통한 사용자 인증
+- 보안 설정: CORS, CSRF 보호 기능 제공
 - 요청/응답 로깅: 시스템 모니터링을 위한 로깅
 - 부하 분산: 서비스 인스턴스 간 부하 분산
 
@@ -137,12 +164,13 @@ API Gateway는 모든 클라이언트 요청의 진입점 역할을 합니다. �
 
 ### 채팅 서비스 (Chat Service)
 
-채팅 서비스는 실시간 메시징 기능을 제공합니다:
+채팅 서비스는 WebSocket을 기반으로 실시간 메시징 기능을 제공합니다:
 
 - WebSocket 기반 실시간 메시지 교환
 - 채팅방 생성 및 관리
 - 메시지 브로드캐스팅
 - 읽음 확인 기능
+- MongoDB Atlas를 통한 채팅 데이터 저장
 
 ### 히스토리 서비스 (History Service)
 
@@ -152,6 +180,53 @@ API Gateway는 모든 클라이언트 요청의 진입점 역할을 합니다. �
 - 채팅 기록 조회
 - 메시지 검색
 - 채팅 통계 제공
+
+## API 문서화
+
+모든 백엔드 서비스는 SpringDoc OpenAPI(Swagger)를 사용하여 API 문서를 자동 생성합니다:
+
+- 각 서비스별 API 엔드포인트, 요청/응답 스키마 자동 문서화
+- JWT 인증 설정 포함
+- API 테스트 인터페이스 제공
+
+문서 접근 경로:
+- http://localhost:8080/api-docs - 통합 API 문서 (Gateway)
+- http://localhost:8081/api-docs - 인증 서비스 API 문서
+- http://localhost:8082/api-docs - 사용자 서비스 API 문서
+- http://localhost:8083/api-docs - 채팅 서비스 API 문서
+- http://localhost:8084/api-docs - 히스토리 서비스 API 문서
+
+## 보안 설정
+
+시스템은 다양한 보안 기능을 통합하고 있습니다:
+
+- API Gateway 수준에서의 인증 및 권한 관리
+  - JWT 기반 인증 및 권한 부여
+  - CORS 설정을 통한 허용된 출처 관리
+  - CSRF 보호 설정
+  - 경로 기반 보안 규칙 적용
+- 마이크로서비스 간 통신 보안
+  - 내부 서비스 통신은 API Gateway를 통해서만 가능
+  - 인증된 요청에 대해서만 서비스 간 통신 허용
+- 비밀번호 암호화 저장
+- HTTPS 통신 지원
+- 입력 유효성 검사
+
+## 데이터베이스
+
+MakeStar 시스템은 다중 데이터베이스 아키텍처를 채택하고 있습니다:
+
+- **Supabase (PostgreSQL)**
+  - 사용자 데이터 관리 (인증 서비스, 사용자 서비스)
+  - 채팅방 메타데이터 관리
+  - 히스토리 데이터 저장
+
+- **MongoDB Atlas**
+  - 실시간 채팅 메시지 저장
+  - 비정형 데이터 처리
+  - 빠른 쿼리 성능
+
+[데이터베이스 아키텍처 보기](./docs/DB_ARCHITECTURE.md)
 
 ## 워크플로우
 
@@ -271,24 +346,13 @@ npm run build
 - History Service: http://localhost:8084
 - Frontend: http://localhost:3000
 
-## 보안
-
-시스템은 다양한 보안 기능을 통합하고 있습니다:
-
-- JWT 기반 인증 및 권한 부여
-- API Gateway에서의 중앙 집중식 인증
-- 비밀번호 암호화 저장
-- HTTPS 통신 지원
-- CORS 설정
-- 입력 유효성 검사
-
-## 데이터베이스
-
-[데이터베이스 아키텍처 보기](./docs/DB_ARCHITECTURE.md)
-
 ## 구현하지 못한 것
 
 [최초 설계](./docs/TROUBLE_SHOOTING.md#아키텍처-설계-kubernetes-기반)에는 고려하여 설계 하였으나 시간과 리소스를 고려하여 아키텍처를 변경하면서 아래의 항목들을 제외하게 되었습니다.
+
+### 프론트엔드 기능
+
+백엔드 개발에 거의 대부분의 시간을 사용하여 제대로 된 기능 구현을 하지 못했습니다.
 
 ### 확장성 및 성능
 
@@ -305,5 +369,53 @@ MakeStar 채팅 시스템은 처음부터 확장성을 고려하여 설계되었
 
 - 중앙 집중식 로깅 (ELK 스택)
 - 분산 추적 (Spring Cloud Sleuth)
-- 서비스 상태 모니터링 (Spring Boot Actuator)
 - 성능 메트릭 수집 및 분석 (Prometheus + Grafana)
+
+### 컨테이너화
+
+프로젝트 계획 단계에서는 다음과 같은 컨테이너화 전략을 고려했으나, 시간 제약으로 완전히 구현하지 못했습니다:
+
+- 각 마이크로서비스를 독립적인 Docker 이미지로 패키징
+- 경량 베이스 이미지(OpenJDK JRE-11-slim) 사용으로 컨테이너 사이즈 최적화
+- 다단계 빌드(Multi-stage build)를 통한 최종 이미지 경량화
+- 환경별(개발, 테스트, 운영) 도커 이미지 태그 전략 수립
+- Docker Compose를 통한 로컬 개발 환경 구성
+- 컨테이너 헬스 체크 및 재시작 정책 설정
+- 컨테이너 로그 관리 및 볼륨 마운트 전략
+
+### CI/CD
+
+CI/CD 파이프라인 구축은 다음 단계에서 구현할 예정이었습니다:
+
+- GitHub Actions를 활용한 자동화된 빌드 및 테스트 파이프라인
+- 브랜치 기반 배포 전략 (feature → develop → staging → production)
+- 테스트 자동화 (단위 테스트, 통합 테스트, E2E 테스트)
+- 정적 코드 분석 및 품질 게이트 설정 (SonarQube)
+- 자동 버전 관리 및 릴리스 노트 생성
+- 컨테이너 레지스트리(Docker Hub, GCR 등)와의 통합
+- 블루/그린 배포 전략 구현
+- 실패 시 자동 롤백 메커니즘
+
+### 테스트 코드
+
+테스트 코드는 아래와 같은 다층적 테스트 전략으로 계획했으나 현재 구현이 미흡합니다:
+
+- 단위 테스트:
+    - 서비스 계층 및 컨트롤러 계층 테스트
+    - Mockito를 활용한 의존성 모킹
+    - JUnit 5 기반 테스트 케이스 구성
+- 통합 테스트:
+    - 마이크로서비스 간 API 호출 테스트
+    - 데이터베이스 연동 테스트 (Testcontainers 활용)
+    - Spring Boot Test 프레임워크 활용
+- 성능 테스트:
+    - 동시 사용자 부하 테스트 (JMeter)
+    - 실시간 메시징 성능 테스트
+    - 데이터베이스 쿼리 최적화 검증
+- 계약 테스트:
+    - Spring Cloud Contract를 활용한 서비스 간 계약 검증
+    - Consumer-Driven Contracts 패턴 적용
+- E2E 테스트:
+    - Selenium/Cypress를 활용한 프론트엔드 자동화 테스트
+    - 실제 시나리오 기반 테스트 케이스 구성
+    - 사용자 경험 검증 테스트
